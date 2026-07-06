@@ -197,9 +197,11 @@ class DiscordClient
 		largeImageKey:String = 'icon'):Void {}
 		
 	public static function close():Void {}
-	
+
 	public static function init() {}
-	
+
+	public static function check():Void {}
+
 	static function set_rpcId(value:String):String return (rpcId = value);
 }
 #end

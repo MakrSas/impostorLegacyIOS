@@ -76,13 +76,24 @@ class MacroUtil
 	public static macro function getPrecompliedContent(path:String)
 	{
 		#if !display
-		if (!sys.FileSystem.exists(path))
+		// On iOS the Haxe compile runs from deep inside the generated Xcode
+		// project, so relative asset paths don't resolve from there. Walk up
+		// parent directories until the file is found (project root).
+		var resolved = path;
+		var up = 0;
+		while (!sys.FileSystem.exists(resolved) && up < 12)
+		{
+			resolved = '../' + resolved;
+			up++;
+		}
+
+		if (!sys.FileSystem.exists(resolved))
 		{
 			Context.fatalError('could not find content at $path', Context.currentPos());
 		}
-		
-		final ret = sys.io.File.getContent(path);
-		
+
+		final ret = sys.io.File.getContent(resolved);
+
 		return macro $v{ret};
 		#end
 	}
