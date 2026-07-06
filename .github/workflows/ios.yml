@@ -17,6 +17,12 @@ on:
 jobs:
   buildiOS:
     runs-on: macos-latest
+    # Hard ceiling so a hung native rebuild can never burn hours of runner time
+    timeout-minutes: 120
+
+    env:
+      # Speed up the hxcpp native compilation
+      HXCPP_COMPILE_THREADS: "4"
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -26,31 +32,64 @@ jobs:
         with:
           haxe-version: 4.3.7
 
+      # Cache the project-local .haxelib (Lime/OpenFL/... Git checkouts *and* the
+      # native libraries we rebuild below) so only the very first run pays the
+      # cost of compiling Lime's native stack. Keyed on the pinned library set.
+      - name: Cache haxelib + native libs
+        uses: actions/cache@v4
+        with:
+          path: .haxelib
+          key: haxelib-ios-${{ hashFiles('.hxpkg') }}-v1
+
       - name: Install libraries
         run: |
           haxelib setup ~/haxelib
           haxelib install hxcpp > /dev/null --quiet
           haxelib install hxpkg
           haxelib run hxpkg install
-          # Needed to rebuild the Lime host tools from the Git checkout
+          # Needed to rebuild the Lime host/native libraries from the Git checkout
           haxelib install format --quiet
           haxelib install hxp --quiet
           haxelib install svg --quiet
 
-      # Lime is installed from Git via hxpkg, and the Git version ships no
-      # prebuilt native libraries. Rebuild them from source:
+      # hxpkg clones Lime via `haxelib git` WITHOUT submodules, but Lime keeps its
+      # third-party native sources (jpeg, sdl, openal, freetype, ...) in submodules.
+      # Without them `lime rebuild` fails instantly on e.g. "jpeglib.h not found".
+      - name: Fetch Lime native submodules
+        run: |
+          for lib in lime openfl; do
+            dir=".haxelib/$lib/git"
+            if [ -d "$dir/.git" ] || [ -f "$dir/.git" ]; then
+              echo "== submodules for $lib =="
+              git -C "$dir" submodule sync --recursive || true
+              git -C "$dir" submodule update --init --recursive --depth 1 || true
+            fi
+          done
+
+      # Lime is installed from Git and ships no prebuilt native libraries, so we
+      # build them from source once (then reuse them from the cache above):
       #  - tools: the neko command-line tool
       #  - macos: the host lime.ndll (CFFI) that every lime command loads
       #  - ios:   the iOS native libraries linked into the app
-      # Without these, lime commands fail with "Could not load lime.ndll".
+      # Each is time-boxed so a hang fails fast instead of running for hours.
       - name: Rebuild Lime tools
         run: haxelib run lime rebuild tools
 
       - name: Rebuild Lime host native library
-        run: haxelib run lime rebuild macos
+        run: |
+          if ls .haxelib/lime/git/ndll/Mac*/lime.ndll >/dev/null 2>&1; then
+            echo "Host lime.ndll already present (cache hit), skipping."
+          else
+            timeout 3000 haxelib run lime rebuild macos
+          fi
 
       - name: Rebuild Lime iOS native libraries
-        run: haxelib run lime rebuild ios
+        run: |
+          if ls .haxelib/lime/git/ndll/iPhone*/*.a >/dev/null 2>&1; then
+            echo "iOS native libs already present (cache hit), skipping."
+          else
+            timeout 3600 haxelib run lime rebuild ios
+          fi
 
       - name: Setup lime
         run: haxelib run lime setup -y
