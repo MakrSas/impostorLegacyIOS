@@ -33,6 +33,12 @@ jobs:
           haxelib install hxpkg
           haxelib run hxpkg install
 
+      # Lime is installed from Git via hxpkg, and the Git version ships no
+      # prebuilt lime.ndll. Rebuild the native host tools from source, otherwise
+      # every lime command fails with "Could not load lime.ndll".
+      - name: Rebuild Lime tools
+        run: haxelib run lime rebuild tools
+
       - name: Setup lime
         run: haxelib run lime setup -y
 
