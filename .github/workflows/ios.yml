@@ -85,6 +85,17 @@ jobs:
             gtimeout -k 60 3000 haxelib run lime rebuild macos
           fi
 
+      # Xcode 16 rejects returning `const char *` (from -UTF8String) as `char *`.
+      # The pinned Lime fork's iOS System.mm predates that, so add the cast.
+      - name: Patch Lime iOS native source for modern Xcode
+        run: |
+          SYS=$(find .haxelib/lime -name 'System.mm' -path '*ios*' | head -n1)
+          echo "Patching: $SYS"
+          if [ -n "$SYS" ]; then
+            perl -pi -e 's/return\s+(\[[^;]*UTF8String\]);/return (char *)$1;/ if /UTF8String\];/ && !m{\(char \*\)};' "$SYS"
+            grep -n 'UTF8String' "$SYS" || true
+          fi
+
       - name: Rebuild Lime iOS native libraries
         run: |
           if ls .haxelib/lime/git/ndll/iPhone*/*.a >/dev/null 2>&1; then
