@@ -93,6 +93,7 @@ jobs:
           haxelib install hxcpp > /dev/null --quiet
           haxelib install hxpkg
           haxelib run hxpkg install
+          ./scripts/fix_lime_macos_jpeg_headers.sh
       - name: Compile
         run: |
           haxelib run lime build mac -64 -D ${{ inputs.buildFlags || 'commit' }} -D HXCPP_M64
@@ -119,6 +120,7 @@ jobs:
           haxelib install hxcpp > /dev/null --quiet
           haxelib install hxpkg
           haxelib run hxpkg install
+          ./scripts/fix_lime_macos_jpeg_headers.sh
       - name: Compile
         run: |
           haxelib run lime build mac -arm64 -D ${{ inputs.buildFlags }} -D HXCPP_ARM64
