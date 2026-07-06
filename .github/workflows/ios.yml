@@ -51,6 +51,8 @@ jobs:
           haxelib install format --quiet
           haxelib install hxp --quiet
           haxelib install svg --quiet
+          # macOS has no GNU `timeout`; coreutils provides `gtimeout`
+          brew install coreutils
 
       # hxpkg clones Lime via `haxelib git` WITHOUT submodules, but Lime keeps its
       # third-party native sources (jpeg, sdl, openal, freetype, ...) in submodules.
@@ -80,7 +82,7 @@ jobs:
           if ls .haxelib/lime/git/ndll/Mac*/lime.ndll >/dev/null 2>&1; then
             echo "Host lime.ndll already present (cache hit), skipping."
           else
-            timeout 3000 haxelib run lime rebuild macos
+            gtimeout -k 60 3000 haxelib run lime rebuild macos
           fi
 
       - name: Rebuild Lime iOS native libraries
@@ -88,7 +90,7 @@ jobs:
           if ls .haxelib/lime/git/ndll/iPhone*/*.a >/dev/null 2>&1; then
             echo "iOS native libs already present (cache hit), skipping."
           else
-            timeout 3600 haxelib run lime rebuild ios
+            gtimeout -k 60 3600 haxelib run lime rebuild ios
           fi
 
       - name: Setup lime
