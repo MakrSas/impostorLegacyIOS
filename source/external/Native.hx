@@ -9,7 +9,9 @@ class Native
 	 */
 	public static function getTaskMemory()
 	{
-		#if cpp
+		// external.memory.Memory pulls in a @:buildXml with a fixed relative path
+		// that doesn't resolve for the deeper iOS build tree, so skip it there.
+		#if (cpp && !ios)
 		return external.memory.Memory.getCurrentUsage();
 		#else
 		return 0.0;

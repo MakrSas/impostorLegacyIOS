@@ -1,6 +1,6 @@
 package external.memory;
 
-#if cpp
+#if (cpp && !ios)
 /**
  * Memory class to properly get accurate memory counts
  * for the program.
