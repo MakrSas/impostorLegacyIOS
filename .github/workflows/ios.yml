@@ -35,6 +35,7 @@ jobs:
           # Needed to rebuild the Lime host tools from the Git checkout
           haxelib install format --quiet
           haxelib install hxp --quiet
+          haxelib install svg --quiet
 
       # Lime is installed from Git via hxpkg, and the Git version ships no
       # prebuilt lime.ndll. Rebuild the native host tools from source, otherwise
