@@ -38,7 +38,8 @@
 	<!--ENGINE CUSTOMIZATION-->
 	<define name="MODS_ALLOWED" if="desktop" />
 	<define name="VIDEOS_ALLOWED" if="cpp" />
-	<define name="DISCORD_ALLOWED" if="cpp"/>
+	<!-- hxdiscord_rpc ships native code that doesn't build for mobile, so keep Discord RPC desktop-only -->
+	<define name="DISCORD_ALLOWED" if="desktop"/>
 
 	<!-- _____________________________ Path Settings ____________________________ -->
 

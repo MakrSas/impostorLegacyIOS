@@ -1,0 +1,66 @@
+name: Build iOS
+
+on:
+  # Run automatically when pushing to the iOS work branch so fixes are tested immediately
+  push:
+    branches:
+      - claude/ios-github-actions-build-aqrnrt
+  # Allow manual runs from the Actions tab
+  workflow_dispatch:
+  # For release builds
+  workflow_call:
+    inputs:
+      buildFlags:
+        required: false
+        type: string
+
+jobs:
+  buildiOS:
+    runs-on: macos-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@main
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.7
+
+      - name: Install libraries
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install hxcpp > /dev/null --quiet
+          haxelib install hxpkg
+          haxelib run hxpkg install
+
+      - name: Setup lime
+        run: haxelib run lime setup -y
+
+      # iOS device builds need code signing, which a fork's CI has no certificate for.
+      # -nosign produces an unsigned .app that we package into an .ipa manually.
+      - name: Compile (unsigned)
+        run: haxelib run lime build ios -release -nosign ${{ inputs.buildFlags }}
+
+      - name: Package unsigned IPA
+        run: |
+          APP_DIR=$(find export -type d -name "*.app" -path "*iphoneos*" | head -n1)
+          if [ -z "$APP_DIR" ]; then
+            APP_DIR=$(find export -type d -name "*.app" | head -n1)
+          fi
+          echo "Found .app: $APP_DIR"
+          if [ -z "$APP_DIR" ]; then
+            echo "No .app produced by the build!"
+            exit 1
+          fi
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP_DIR" Payload/
+          zip -qr ImpostorLegacy-unsigned.ipa Payload
+          ls -lh ImpostorLegacy-unsigned.ipa
+
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nmv-ios-unsigned
+          path: ImpostorLegacy-unsigned.ipa
+          retention-days: 30
