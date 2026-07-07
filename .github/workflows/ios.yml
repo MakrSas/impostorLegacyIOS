@@ -32,6 +32,19 @@ jobs:
         with:
           haxe-version: 4.3.7
 
+      # The macos-latest image moved to Xcode 26 / iOS 26 SDK, whose stdio
+      # headers no longer compile hxcpp's bundled zlib. Pin to the newest
+      # Xcode 16.x (the toolchain the project builds cleanly against).
+      - name: Select Xcode 16
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n1)
+          if [ -z "$XCODE" ]; then
+            XCODE=$(ls -d /Applications/Xcode_1*.app 2>/dev/null | sort -V | tail -n1)
+          fi
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
       # Cache the project-local .haxelib (Lime/OpenFL/... Git checkouts *and* the
       # native libraries we rebuild below) so only the very first run pays the
       # cost of compiling Lime's native stack. Keyed on the pinned library set.
