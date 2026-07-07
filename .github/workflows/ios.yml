@@ -46,7 +46,13 @@ jobs:
           haxelib setup ~/haxelib
           haxelib install hxcpp > /dev/null --quiet
           haxelib install hxpkg
-          haxelib run hxpkg install
+          # hxpkg refuses to run when .haxelib already exists; on a cache hit the
+          # libraries (and their rebuilt native binaries) are already present.
+          if [ -d .haxelib/lime/git ]; then
+            echo ".haxelib restored from cache — skipping hxpkg install"
+          else
+            haxelib run hxpkg install
+          fi
           # Needed to rebuild the Lime host/native libraries from the Git checkout
           haxelib install format --quiet
           haxelib install hxp --quiet
