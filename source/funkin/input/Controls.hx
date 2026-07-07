@@ -11,7 +11,6 @@ import flixel.input.gamepad.FlxGamepadInputID;
 import flixel.input.keyboard.FlxKey;
 #if TOUCH_CONTROLS
 import flixel.input.IFlxInput;
-import flixel.input.actions.FlxActionInput.FlxInputDevice;
 import flixel.input.actions.FlxActionInputDigital.FlxActionInputDigitalIFlxInput;
 #end
 
@@ -505,7 +504,7 @@ class Controls extends FlxActionSet
 				while (i-- > 0)
 				{
 					final input = action.inputs[i];
-					if (input.device == FlxInputDevice.IFLXINPUT_OBJECT) action.remove(input);
+					if (input.device == flixel.input.actions.FlxActionInput.FlxInputDevice.IFLXINPUT_OBJECT) action.remove(input);
 				}
 			});
 		}
