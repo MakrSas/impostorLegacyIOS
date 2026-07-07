@@ -16,7 +16,9 @@ on:
 
 jobs:
   buildiOS:
-    runs-on: macos-latest
+    # Pinned image: macos-latest moved to Xcode 26 / iOS 26 SDK, which can't
+    # compile hxcpp's bundled zlib. macos-15 still ships Xcode 16.x.
+    runs-on: macos-15
     # Hard ceiling so a hung native rebuild can never burn hours of runner time
     timeout-minutes: 120
 
@@ -39,10 +41,14 @@ jobs:
         run: |
           XCODE=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n1)
           if [ -z "$XCODE" ]; then
-            XCODE=$(ls -d /Applications/Xcode_1*.app 2>/dev/null | sort -V | tail -n1)
+            XCODE=$(ls -d /Applications/Xcode_15*.app 2>/dev/null | sort -V | tail -n1)
           fi
-          echo "Using $XCODE"
-          sudo xcode-select -s "$XCODE/Contents/Developer"
+          if [ -n "$XCODE" ]; then
+            echo "Using $XCODE"
+            sudo xcode-select -s "$XCODE/Contents/Developer"
+          else
+            echo "No Xcode 16/15 found; using default $(xcode-select -p)"
+          fi
           xcodebuild -version
 
       # Cache the project-local .haxelib (Lime/OpenFL/... Git checkouts *and* the
