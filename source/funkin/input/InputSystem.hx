@@ -164,6 +164,21 @@ class InputSystem implements flixel.util.IFlxDestroyable extends EventDispatcher
 		return justReleasedActions[noteData].check();
 	}
 	
+	#if TOUCH_CONTROLS
+	/**
+	 * Dispatches a note input event straight from a touch control (the mobile
+	 * hitbox), bypassing the keyboard/gamepad device lookup. Mirrors what a
+	 * hardware key press/release would produce for a note direction.
+	 * @param noteData the note direction (0 = left, 1 = down, 2 = up, 3 = right)
+	 * @param pressed  `true` for a press, `false` for a release
+	 */
+	public function fireTouchInput(noteData:Int, pressed:Bool):Void
+	{
+		dispatchEvent(new InputEvent(pressed ? InputEvent.INPUT_PRESSED : InputEvent.INPUT_RELEASED, false, true, noteData, Keys, -1,
+			lime.system.System.getTimer()));
+	}
+	#end
+
 	/**
 	 * Dispatches all awaiting input events
 	 */

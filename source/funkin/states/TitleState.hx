@@ -177,7 +177,16 @@ class TitleState extends MusicBeatState
 			return;
 		}
 		
-		final pressedEnter:Bool = FlxG.gamepads.lastActive?.justPressed.START || FlxG.keys.justPressed.ENTER || controls.ACCEPT || FlxG.mouse.justPressed;
+		var pressedEnter:Bool = FlxG.gamepads.lastActive?.justPressed.START || FlxG.keys.justPressed.ENTER || controls.ACCEPT || FlxG.mouse.justPressed;
+
+		// A screen tap advances the title (skip intro, then enter the menu) on touch devices.
+		#if TOUCH_CONTROLS
+		if (!pressedEnter)
+		{
+			for (touch in FlxG.touches.list)
+				if (touch.justPressed) { pressedEnter = true; break; }
+		}
+		#end
 		
 		if (!transitioning && skippedIntro)
 		{

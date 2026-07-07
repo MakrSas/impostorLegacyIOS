@@ -548,7 +548,12 @@ class PlayState extends MusicBeatState
 	public var allowPet:Bool;
 	
 	public var input:InputSystem;
-	
+
+	#if TOUCH_CONTROLS
+	/** On-screen four-lane touch hitbox (mobile only). */
+	public var hitbox:funkin.mobile.Hitbox;
+	#end
+
 	var tauntCharacter(get, set):Null<Character>;
 	
 	inline function get_tauntCharacter():Null<Character> return focusPlayer;
@@ -899,6 +904,19 @@ class PlayState extends MusicBeatState
 		input = new InputSystem(controls);
 		input.addEventListener(InputEvent.INPUT_PRESSED, onInputPress);
 		input.addEventListener(InputEvent.INPUT_RELEASED, onInputRelease);
+
+		#if TOUCH_CONTROLS
+		hitbox = new funkin.mobile.Hitbox();
+		hitbox.cameras = [camHUD];
+		for (button in hitbox.buttons)
+		{
+			button.onJustPressed = (noteData) -> input.fireTouchInput(noteData, true);
+			button.onJustReleased = (noteData) -> input.fireTouchInput(noteData, false);
+		}
+		add(hitbox);
+		// Feed the lanes into the note actions so held/sustain notes register too.
+		controls.bindHitbox(hitbox.getInputs());
+		#end
 		
 		Conductor.safeZoneOffset = (ClientPrefs.safeFrames / 60) * 1000;
 		
@@ -3316,7 +3334,13 @@ class PlayState extends MusicBeatState
 		noteTypeScripts = FlxDestroyUtil.destroy(noteTypeScripts);
 		
 		input = FlxDestroyUtil.destroy(input);
-		
+
+		#if TOUCH_CONTROLS
+		// Controls.instance outlives this state, so drop the hitbox input refs.
+		controls.unbindHitbox();
+		hitbox = null;
+		#end
+
 		modManager = FlxDestroyUtil.destroy(modManager);
 		
 		FlxDestroyUtil.destroyArray(NoteUtil.noteskins);

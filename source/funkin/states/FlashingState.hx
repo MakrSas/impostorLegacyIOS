@@ -33,14 +33,26 @@ You may change this anytime in the Options menu.
 	
 	override function update(elapsed:Float)
 	{
-		if (!leftState && (controls.ACCEPT || controls.BACK)) {
+		var accept:Bool = controls.ACCEPT;
+		final back:Bool = controls.BACK;
+
+		// No keyboard on touch devices: a tap keeps the effects on (same as ENTER).
+		#if TOUCH_CONTROLS
+		if (!accept && !back)
+		{
+			for (touch in FlxG.touches.list)
+				if (touch.justPressed) { accept = true; break; }
+		}
+		#end
+
+		if (!leftState && (accept || back)) {
 			FlxTransitionableState.skipNextTransIn = true;
 			FlxTransitionableState.skipNextTransOut = true;
 			
-			ClientPrefs.photosensitive = controls.BACK;
+			ClientPrefs.photosensitive = back;
 			FlxG.sound.play(Paths.sound('confirmMenu'));
-			
-			if (controls.BACK)
+
+			if (back)
 			{
 				FlxTween.tween(warnText, {alpha: 0}, 1,
 				{

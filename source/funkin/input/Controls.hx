@@ -9,6 +9,11 @@ import flixel.input.actions.FlxActionSet;
 import flixel.input.gamepad.FlxGamepad;
 import flixel.input.gamepad.FlxGamepadInputID;
 import flixel.input.keyboard.FlxKey;
+#if TOUCH_CONTROLS
+import flixel.input.IFlxInput;
+import flixel.input.actions.FlxActionInput.FlxInputDevice;
+import flixel.input.actions.FlxActionInputDigital.FlxActionInputDigitalIFlxInput;
+#end
 
 // at some point i do wanna rework this to be simpler and easier to work with
 
@@ -465,7 +470,48 @@ class Controls extends FlxActionSet
 		
 		inline forEachBound(control, (action, _) -> removeKeys(action, copyKeys));
 	}
-	
+
+	#if TOUCH_CONTROLS
+	// Note directions in note-data order (0 = left, 1 = down, 2 = up, 3 = right).
+	static final NOTE_CONTROLS:Array<Control> = [Control.NOTE_LEFT, Control.NOTE_DOWN, Control.NOTE_UP, Control.NOTE_RIGHT];
+
+	/**
+	 * Binds the four mobile hitbox lane inputs into the note actions so that
+	 * held/sustain notes register from touch. `inputs` must be in note-data
+	 * order (left, down, up, right).
+	 */
+	public function bindHitbox(inputs:Array<IFlxInput>):Void
+	{
+		for (data => control in NOTE_CONTROLS)
+		{
+			final input:IFlxInput = inputs[data];
+			if (input == null) continue;
+			inline forEachBound(control, (action, state) -> action.add(new FlxActionInputDigitalIFlxInput(input, state)));
+		}
+	}
+
+	/**
+	 * Removes any hitbox (IFlxInput) inputs previously added by `bindHitbox`.
+	 * Must be called when the hitbox is destroyed since `Controls.instance`
+	 * outlives individual states.
+	 */
+	public function unbindHitbox():Void
+	{
+		for (control in NOTE_CONTROLS)
+		{
+			inline forEachBound(control, function(action, _)
+			{
+				var i:Int = action.inputs.length;
+				while (i-- > 0)
+				{
+					final input = action.inputs[i];
+					if (input.device == FlxInputDevice.IFLXINPUT_OBJECT) action.remove(input);
+				}
+			});
+		}
+	}
+	#end
+
 	inline static function addKeys(action:FlxActionDigital, keys:Array<FlxKey>, state:FlxInputState)
 	{
 		for (key in keys)
