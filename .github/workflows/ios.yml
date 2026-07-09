@@ -63,13 +63,16 @@ jobs:
       - name: Install libraries
         run: |
           haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null --quiet
           haxelib install hxpkg
           # hxpkg refuses to run when .haxelib already exists; on a cache hit the
-          # libraries (and their rebuilt native binaries) are already present.
+          # libraries (incl. the FunkinCrew hxcpp fork, whose zlib is patched for
+          # iOS) are already present. Installing the release hxcpp here would land
+          # in the project-local .haxelib and override the fork -> zlib build fails,
+          # so only install it on a cache miss (hxpkg then re-pins the fork).
           if [ -d .haxelib/lime/git ]; then
-            echo ".haxelib restored from cache — skipping hxpkg install"
+            echo ".haxelib restored from cache — skipping hxcpp + hxpkg install"
           else
+            haxelib install hxcpp > /dev/null --quiet
             haxelib run hxpkg install
           fi
           # Needed to rebuild the Lime host/native libraries from the Git checkout
